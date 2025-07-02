@@ -1,4 +1,5 @@
-import React from 'react'
+import BestRest from './Components/BestRest.jsx';
+
 import './BestRes.css'
 
 function BestRest() {
