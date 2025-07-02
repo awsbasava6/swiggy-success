@@ -1,4 +1,4 @@
-import BestRest from './Components/BestRest.jsx';
+import BestRest from './Components/BestRest';
 
 import './BestRes.css'
 
