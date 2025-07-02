@@ -1,10 +1,10 @@
 import './App.css';
-import BestRest from './Components/BestRest';
-import Footer from './Components/Footer';
-import Navigate from './Components/Navigate';
-import OffersBanner from './Components/OffersBanner';
-import RestaurentChain from './Components/RestaurentChain';
-import RestaurentOnline from './Components/RestaurentOnline';
+import BestRest from './components/BestRest';
+import Footer from './components/Footer';
+import Navigate from './components/Navigate';
+import OffersBanner from './components/OffersBanner';
+import RestaurentChain from './components/RestaurentChain';
+import RestaurentOnline from './components/RestaurentOnline';
 
 function App() {
   return (
