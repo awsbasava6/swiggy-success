@@ -53,7 +53,7 @@ pipeline{
             steps{
                 script{
                    withDockerRegistry(credentialsId: 'docker-creds', toolName: 'docker'){   
-                       sh "docker build -t swiggy ."
+                       sh "docker build -t swiggy ," " ."
                        sh "docker tag swiggy awsbasava6/swiggy:latest "
                        sh "docker push awsbasava6/swiggy:latest "
                     }
