@@ -15,7 +15,7 @@ pipeline{
         }
         stage('Checkout from Git'){
             steps{
-                 'git branch: 'main ', url: 'https://github.com/awsbasava6/swiggy-success.git'
+                 git 'https://github.com/awsbasava6/swiggy-success.git'
             }
         }
         stage("Sonarqube Analysis "){
