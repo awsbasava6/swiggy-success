@@ -1,74 +1,88 @@
-pipeline{
+pipeline {
     agent any
-    tools{
+    tools {
         jdk 'jdk17'
         nodejs 'node23'
     }
     environment {
-        SCANNER_HOME=tool 'sonar-scanner'
+        SCANNER_HOME = tool 'sonar-scanner'
     }
     stages {
-        stage('clean workspace'){
-            steps{
+        stage('Clean Workspace') {
+            steps {
                 cleanWs()
             }
         }
-        stage('Checkout from Git'){
-            steps{
-                 git url: 'https://github.com/awsbasava6/swiggy-success.git', branch: 'master'
+        stage('Checkout from Git') {
+            steps {
+                git 'https://github.com/awsbasava6/swiggy-success.git'
             }
         }
-        stage("Sonarqube Analysis "){
-            steps{
+        stage('SonarQube Analysis') {
+            steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Swiggy \
-                    -Dsonar.projectKey=Swiggy '''
+                    sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=Swiggy \
+                        -Dsonar.projectKey=Swiggy \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://44.212.57.191:9000
+                    '''
                 }
             }
         }
-        stage("quality gate"){
-           steps {
+        stage('Quality Gate') {
+            steps {
                 script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
+                    waitForQualityGate abortPipeline: true, credentialsId: 'Sonar-token'
                 }
-            } 
+            }
         }
         stage('Install Dependencies') {
             steps {
-                sh "npm install"
+                sh 'npm install'
             }
         }
-        stage('OWASP FS SCAN') {
+        stage('OWASP FS Scan') {
             steps {
                 dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
-        stage('TRIVY FS SCAN') {
+        stage('Trivy FS Scan') {
             steps {
-                sh "trivy fs . > trivyfs.txt"
+                sh 'trivy fs . > trivyfs.txt'
             }
         }
-        stage("Docker Build & Push"){
-            steps{
-                script{
-                   withDockerRegistry(credentialsId: 'docker-creds', toolName: 'docker'){   
-                       sh "docker build -t swiggy ," " ."
-                       sh "docker tag swiggy awsbasava6/swiggy:latest "
-                       sh "docker push awsbasava6/swiggy:latest "
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-creds', toolName: 'docker') {
+                        sh 'docker build -t swiggy .'
+                        sh 'docker tag swiggy awsbasava6/swiggy:latest'
+                        sh 'docker push awsbasava6/swiggy:latest'
                     }
                 }
             }
         }
-        stage("TRIVY"){
-            steps{
-                sh "trivy image awsbasava6/swiggy:latest > trivy.txt" 
+        stage('Trivy Image Scan') {
+            steps {
+                sh 'trivy image awsbasava6/swiggy:latest > trivy.txt'
             }
         }
-        stage('Deploy to container'){
-            steps{
-                sh 'docker run -d --name swiggy -p 3000:3000 awsbasava6/swiggy:latest'
+        stage('Deploy to Container') {
+            steps {
+                // Optional: Clean up existing container
+                sh '''
+                    docker rm -f swiggy || true
+                    docker run -d --name swiggy -p 3000:3000 awsbasava6/swiggy:latest
+                '''
             }
         }
     }
 }
+post {
+        always {
+            archiveArtifacts artifacts: '**/trivy*.txt, **/dependency-check-report.xml', allowEmptyArchive: true
+        }
+    }
